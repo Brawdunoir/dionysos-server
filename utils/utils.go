@@ -41,3 +41,20 @@ func GetUsersFromRoom(roomID string, db driver.Database, graph driver.Graph) (re
 
 	return result
 }
+
+func IsUserConnectedToRoom(roomID string, user string, db driver.Database, graph driver.Graph) (found bool) {
+	connnectedUsers := GetUsersFromRoom(roomID, db, graph)
+	fmt.Println("Connected users: ", connnectedUsers)
+
+	// Check if roomUpdate.Owner is in connnectedUsers
+	found = false
+
+	for _, v := range connnectedUsers {
+		// check if the strings match
+		if string(v) == user {
+			found = true
+			break
+		}
+	}
+	return found
+}
