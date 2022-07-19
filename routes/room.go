@@ -18,7 +18,6 @@ import (
 
 // CreateRoom creates a room in the database
 func CreateRoom(c *gin.Context) {
-	var roomRequest RoomRequest
 	var owner models.User
 
 	ctx, cancelCtx := context.WithTimeout(c, 1000*time.Millisecond)
