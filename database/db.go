@@ -1,11 +1,14 @@
 package database
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 
 	c "github.com/Brawdunoir/dionysos-server/constants"
 	"github.com/Brawdunoir/dionysos-server/models"
+	"github.com/arangodb/go-driver"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -74,4 +77,51 @@ func createConfig() *gorm.Config {
 		log.Println("Possible values are : " + c.ENVIRONMENT_TESTING + ", " + c.ENVIRONMENT_DEVELOPMENT + ", " + c.ENVIRONMENT_PRODUCTION)
 		return &gorm.Config{}
 	}
+}
+
+// GetGraph returns a graph instance
+func GetGraph(db driver.Database, graphName string) (graph driver.Graph) {
+
+	graphExists, err := db.GraphExists(context.TODO(), graphName)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	if graphExists {
+		fmt.Printf("%s graph exists already\n", graphName)
+		graph, err = db.Graph(context.TODO(), graphName)
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+	} else {
+		graph = SetupGraph(db, graphName, cols)
+	}
+
+	return graph
+}
+
+// SetupGraph creates the edgeDefinition and the corresponding graph
+func SetupGraph(db driver.Database, graphName string, cols []string) driver.Graph {
+
+	var edgeDefinition driver.EdgeDefinition
+
+	edgeDefinition.Collection = EdgeCollection
+
+	// define a set of collections where an edge is going out...
+	edgeDefinition.From = []string{UsersCollection}
+
+	// repeat this for the collections where an edge is going into
+	edgeDefinition.To = cols
+
+	var options driver.CreateGraphOptions
+	options.EdgeDefinitions = []driver.EdgeDefinition{edgeDefinition}
+
+	graph, err := db.CreateGraphV2(context.TODO(), graphName, &options)
+	if err != nil {
+		fmt.Printf("Failed to create graph: %v", err)
+	} else {
+		fmt.Printf("Created graph '%s' in database '%s'\n", graphName, db.Name())
+	}
+
+	return graph
 }
