@@ -3,20 +3,25 @@ package routes
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/Brawdunoir/dionysos-server/constants"
+	docs "github.com/Brawdunoir/dionysos-server/docs"
 	"github.com/gin-gonic/gin"
+
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // SetupRouter sets up the router
 func SetupRouter(router *gin.Engine) *gin.Engine {
 	basePath := constants.BasePath
+	docs.SwaggerInfo.BasePath = basePath
 
 	router.Use(options)
 
 	r := router.Group(basePath)
 	{
+		// User
 		userRouter := r.Group("/users")
 		{
 			userRouter.POST("", CreateUser)
@@ -24,7 +29,7 @@ func SetupRouter(router *gin.Engine) *gin.Engine {
 			userRouter.PATCH("/:id", UpdateUser)
 			userRouter.DELETE("/:id", DeleteUser)
 		}
-
+		// Room
 		roomRouter := r.Group("/rooms")
 		{
 			roomRouter.POST("", CreateRoom)
@@ -32,14 +37,12 @@ func SetupRouter(router *gin.Engine) *gin.Engine {
 			roomRouter.PATCH("/:id", UpdateRoom)
 			roomRouter.DELETE("/:id", DeleteRoom)
 		}
-		r.GET("/version", func(c *gin.Context) {
-			var version string
-			if version = os.Getenv("VERSION"); version == "" {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Version not set"})
-			}
-			c.String(http.StatusOK, version)
-		})
+		// Version
+		r.GET("/version", GetVersion)
+
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	}
+
 	return router
 }
 
